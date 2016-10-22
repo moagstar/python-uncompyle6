@@ -1,6 +1,8 @@
 import dis
 import hypothesis
 from hypothesis import strategies as st
+# uncompyle6
+from uncompyle6 import PYTHON_VERSION, deparse_code
 
 
 @st.composite
@@ -115,4 +117,5 @@ def test_typed_variables(expr):
 @hypothesis.given(class_definitions())
 def test_class_defintions(statement):
     code = compile(statement, '<string>', 'exec')
-    dis.dis(code)
+    deparsed = deparse_code(PYTHON_VERSION, code, compile_mode='single')
+    recompiled = compile(deparsed.text, '<string>', 'single')
