@@ -5,6 +5,7 @@ from hypothesis import strategies as st
 
 @st.composite
 def type_names_and_strategies(draw):
+    # TODO : More extensive list of types
     return draw(st.sampled_from((
         ('int', st.integers()),
         ('float', st.floats()),
@@ -14,13 +15,19 @@ def type_names_and_strategies(draw):
     )))
 
 
-variable_names = st.text(st.characters(
-    min_codepoint=65, max_codepoint=90), min_size=1)
+names = st.text(st.characters(min_codepoint=65, max_codepoint=90), min_size=1)
 
 
 @st.composite
+def statements(draw):
+    # TODO : Larger corpus (or hypothesis generated)
+    return draw(st.sampled_from(
+        'pass',
+    ))
+
+@st.composite
 def typed_variables(draw):
-    variable_name = draw(variable_names)
+    variable_name = draw(names)
     type_name, strategy = draw(type_names_and_strategies())
     with_value = draw(st.booleans())
     value = (' = ' + repr(draw(strategy))) if with_value else ''
@@ -29,46 +36,67 @@ def typed_variables(draw):
 
 @st.composite
 def untyped_variables(draw):
-    variable_name = draw(variable_names)
+    variable_name = draw(names)
     _, strategy = draw(type_names_and_strategies())
     value = repr(draw(strategy))
     return '{variable_name} = {value}'.format(**locals())
 
 
 @st.composite
-def class_methods(draw):
-    # TODO
-    return """\
-    @classmethod
-    def method(): pass
-"""
+def lists_of_variables(draw):
+    variables = st.one_of(typed_variables(), untyped_variables())
+    return draw(st.lists(variables, min_size=1))
 
 
 @st.composite
-def instance_methods(draw):
-    # TODO
+def function_arguments(draw):
+    args = ', '.join(draw(lists_of_variables()))
+    return (', ' + args) if len(args) else ''
+
+
+@st.composite
+def function_definitions(draw, name=None, args=''):
+    name = draw(names) if name is None else name
+    extra_args = draw(function_arguments())
+    return 'def {name}({args}{extra_args}):'.format(**locals())
+
+
+@st.composite
+def functions(draw, name=None, args='', indent=0):
+    function_definition = draw(function_definitions(name, args))
+    lists_of_statements = st.lists(statements(), min_size=1)
+    function_body = '\n'.join(draw(lists_of_statements))
+    body_indent = (indent + 1) * '    '
+    indent *= '    '
+    return """
+{indent}{function_definition}
+{body_indent}{function_body}
+""".format(**locals())
+
+
+@st.composite
+def class_methods(draw, name=None, indent=0):
+    function_definition = draw(functions(name, 'cls', indent))
     return """\
-    @classmethod
-    def method(self): pass
-"""
+@classmethod
+{function_definition}
+""".format(**locals())
+
+
+@st.composite
+def instance_methods(draw, name=None, indent=0):
+    function_definition = draw(functions(name, 'self', indent))
+    return '{function_definition}'.format(**locals())
+
 
 @st.composite
 def class_definitions(draw):
-
-    class_name = draw(variable_names)
-
-    class_members = '\n'.join(draw(st.lists(st.one_of(
-        typed_variables(), untyped_variables()), min_size=1)))
-
-    init_args = ', '.join(draw(st.lists(st.one_of(
-        typed_variables(), untyped_variables()), min_size=1)))
-    init_args = (', ' + init_args) if len(init_args) else ''
-    init = 'def __init__(self{init_args}): pass'.format(**locals())
-
-    class_methods_ = '\n'.join(draw(st.lists(class_methods())))
-
-    instance_methods_ = '\n'.join(draw(st.lists(instance_methods())))
-
+    class_name = draw(names)
+    class_members = '\n'.join(draw(lists_of_variables()))
+    indent = 1
+    init = draw(instance_methods('__init__', indent=indent))
+    class_methods_ = '\n'.join(draw(st.lists(class_methods(indent=indent))))
+    instance_methods_ = '\n'.join(draw(st.lists(instance_methods(indent=indent))))
     return """\
 class {class_name}:
     {class_members}
@@ -88,4 +116,3 @@ def test_typed_variables(expr):
 def test_class_defintions(statement):
     code = compile(statement, '<string>', 'exec')
     dis.dis(code)
-    assert not statement
