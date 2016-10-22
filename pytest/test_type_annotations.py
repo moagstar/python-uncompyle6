@@ -109,9 +109,10 @@ class {class_name}:
 
 
 @hypothesis.given(typed_variables())
-def test_typed_variables(expr):
-    code = compile(expr, '<string>', 'single')
-    dis.dis(code)
+def test_typed_variables(statement):
+    code = compile(statement, '<string>', 'exec')
+    deparsed = deparse_code(PYTHON_VERSION, code, compile_mode='single')
+    recompiled = compile(deparsed.text, '<string>', 'single')
 
 
 @hypothesis.given(class_definitions())
