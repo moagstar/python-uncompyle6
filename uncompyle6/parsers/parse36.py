@@ -19,8 +19,6 @@ class Python36Parser(Python35Parser):
         fstring_multi ::= fstring_expr_or_strs BUILD_STRING
         fstring_expr_or_strs ::= fstring_expr_or_strs fstring_expr_or_str
         fstring_expr_or_strs ::= fstring_expr_or_str
-
-        setup_annotations ::= STORE_ANNOTATION
         """
 
     def add_custom_rules(self, tokens, customize):
@@ -49,10 +47,7 @@ class Python36Parser(Python35Parser):
                 """ % (fstring_expr_or_str_n, fstring_expr_or_str_n, "fstring_expr_or_str " * v)
                 self.add_unique_doc_rules(rules_str, customize)
             elif opname == 'SETUP_ANNOTATIONS':
-                rules_str = """
-                    setup_annotations ::= SETUP_ANNOTATIONS
-                """
-                self.add_unique_doc_rules(rules_str, customize)
+                pass  # TODO : Add rules for STORE_ANNOTATION
 
 
 class Python36ParserSingle(Python36Parser, PythonParserSingle):

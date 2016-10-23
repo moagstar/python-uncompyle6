@@ -8,18 +8,28 @@ scanner routine for Python 3.
 
 from __future__ import print_function
 
+import sys
+
 from uncompyle6.scanners.scanner3 import Scanner3
 
 # bytecode verification, verify(), uses JUMP_OPs from here
 from xdis.opcodes import opcode_36 as opc
 JUMP_OPs = map(lambda op: opc.opname[op], opc.hasjrel + opc.hasjabs)
 
+
 class Scanner36(Scanner3):
 
     def __init__(self, show_asm=None):
         Scanner3.__init__(self, 3.6, show_asm)
         return
-    pass
+
+    def ingest(self, co, classname=None, code_objects=None, show_asm=None):
+        code_objects = {} if code_objects is None else code_objects
+        tokens, customize = Scanner3.ingest(self, co, classname, code_objects, show_asm)
+        # ignore SETUP_ANNOTATIONS which has no useful meaning for decompilation
+        tokens = [t for t in tokens if t.type != 'SETUP_ANNOTATIONS']
+        return tokens, customize
+
 
 if __name__ == "__main__":
     from uncompyle6 import PYTHON_VERSION
