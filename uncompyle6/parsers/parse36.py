@@ -46,8 +46,12 @@ class Python36Parser(Python35Parser):
                     %s ::= %sBUILD_STRING
                 """ % (fstring_expr_or_str_n, fstring_expr_or_str_n, "fstring_expr_or_str " * v)
                 self.add_unique_doc_rules(rules_str, customize)
-            elif opname == 'SETUP_ANNOTATIONS':
-                pass  # TODO : Add rules for STORE_ANNOTATION
+            elif opname == 'STORE_ANNOTATION':
+                rules_str = """
+                    expr ::= type_annotation
+                    type_annotation ::= expr STORE_ANNOTATION
+                """
+                self.add_unique_doc_rules(rules_str, customize)
 
 
 class Python36ParserSingle(Python36Parser, PythonParserSingle):

@@ -110,7 +110,11 @@ class {class_name}:
 
 @hypothesis.given(typed_variables())
 def test_typed_variables(statement):
-    code = compile(statement, '<string>', 'exec')
+    code = compile(statement, '<string>', 'single')
+    import six
+    stream = six.StringIO()
+    dis.dis(code, file=stream)
+    d = stream.getvalue().splitlines()
     deparsed = deparse_code(PYTHON_VERSION, code, compile_mode='single')
     recompiled = compile(deparsed.text, '<string>', 'single')
 

@@ -21,12 +21,13 @@ class Scanner36(Scanner3):
 
     def __init__(self, show_asm=None):
         Scanner3.__init__(self, 3.6, show_asm)
-        return
 
     def ingest(self, co, classname=None, code_objects=None, show_asm=None):
+        """
+        Ignore SETUP_ANNOTATIONS which has no useful meaning for decompilation.
+        """
         code_objects = {} if code_objects is None else code_objects
         tokens, customize = Scanner3.ingest(self, co, classname, code_objects, show_asm)
-        # ignore SETUP_ANNOTATIONS which has no useful meaning for decompilation
         tokens = [t for t in tokens if t.type != 'SETUP_ANNOTATIONS']
         return tokens, customize
 
