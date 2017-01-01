@@ -504,7 +504,9 @@ class Python3Parser(PythonParser):
             opname = token.type
             opname_base = opname[:opname.rfind('_')]
 
-            if opname == 'PyPy':
+            if not opname:
+                continue
+            elif opname == 'PyPy':
                 self.addRule("""
                     stmt ::= assign3_pypy
                     stmt ::= assign2_pypy
@@ -513,7 +515,7 @@ class Python3Parser(PythonParser):
                 """, nop_func)
                 continue
             elif opname in ('CALL_FUNCTION', 'CALL_FUNCTION_VAR',
-                            'CALL_FUNCTION_VAR_KW', 'CALL_FUNCTION_KW'):
+                            'CALL_FUNCTION_VAR_KW', 'CALL_FUNCTION_KW', 'CALL_FUNCTION_EX'):
                 self.custom_classfunc_rule(opname, token, customize)
             elif opname == 'LOAD_DICTCOMP':
                 rule_pat = ("dictcomp ::= LOAD_DICTCOMP %sMAKE_FUNCTION_0 expr "

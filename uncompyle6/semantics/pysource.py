@@ -652,6 +652,11 @@ class SourceWalker(GenericASTTraversal, object):
 
                 self.n_fstring_single = n_fstring_single
 
+                def n_call_function(node):
+                    self.default(node)
+
+                self.n_call_function = n_call_function
+
         return
 
     f = property(lambda s: s.params['f'],
@@ -2054,7 +2059,7 @@ class SourceWalker(GenericASTTraversal, object):
                     str += '*%c)'
                     entry = (str, 0, p2, -2)
                 elif op == 'CALL_FUNCTION_KW':
-                    str += '**%c)'
+                    str += '%c)'
                     entry = (str, 0, p2, -2)
                 else:
                     str += '*%c, **%c)'

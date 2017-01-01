@@ -53,6 +53,34 @@ class Python36Parser(Python35Parser):
                 """
                 self.add_unique_doc_rules(rules_str, customize)
 
+    def custom_classfunc_rule(self, opname, token, customize):
+        """
+        call_function ::= expr {expr}^n CALL_FUNCTION_n
+        call_function ::= expr {expr}^n CALL_FUNCTION_KW_n POP_TOP
+        call_function ::= expr {expr}^n LOAD_CONST CALL_FUNCTION_KW POP_TOP
+
+        classdefdeco2 ::= LOAD_BUILD_CLASS mkfunc {expr}^n-1 CALL_FUNCTION_n
+        """
+        # Low byte indicates number of positional paramters,
+        # high byte number of positional parameters
+        if token == 'CALL_FUNCTION_KW':
+            token.type = self.call_fn_name(token)
+            kwarg_values = 'expr ' * token.attr
+            rule_str = 'call_function ::= expr %sLOAD_CONST %s' % (kwarg_values, token.type)
+            self.add_unique_rule(rule_str, token.type, token.attr, customize)
+        else:
+            args_pos = token.attr & 0xff
+            args_kw = (token.attr >> 8) & 0xff
+            nak = (len(opname) - len('CALL_FUNCTION')) // 3
+            token.type = self.call_fn_name(token)
+            rule = ('call_function ::= expr '
+                    + ('pos_arg ' * args_pos)
+                    + ('kwarg ' * args_kw)
+                    + 'expr ' * nak + token.type)
+            self.add_unique_rule(rule, token.type, args_pos, customize)
+            rule = ('classdefdeco2 ::= LOAD_BUILD_CLASS mkfunc %s%s_%d'
+                    % (('expr ' * (args_pos - 1)), opname, args_pos))
+            self.add_unique_rule(rule, token.type, args_pos, customize)
 
 class Python36ParserSingle(Python36Parser, PythonParserSingle):
     pass
